@@ -3,6 +3,7 @@ from scipy.optimize import minimize
 from scipy.io import loadmat
 from math import sqrt
 from numpy import exp
+import time
 
 
 def initializeWeights(n_in, n_out):
@@ -374,4 +375,4 @@ for x in n_hidden_array:
         
         t2 = time.time()
         
-        print '\n Time taken:'+str(t2-t1)
+        print('\n Time taken:'+str(t2-t1))

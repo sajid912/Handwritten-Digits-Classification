@@ -1,9 +1,12 @@
 '''
 Comparing single layer MLP with deep MLP (using TensorFlow)
 '''
-
+import pickle, time
 import numpy as np
-import pickle
+from scipy.optimize import minimize
+from scipy.io import loadmat
+from math import sqrt
+from numpy import exp
 
 # Do not change this
 def initializeWeights(n_in,n_out):
@@ -96,7 +99,7 @@ def nnObjFunction(params, *args):
     ol = sigmoid(bl)
     
     # Labelling output
-    yl = np.zeros(shape=(n, 10), dtype = np.float64) # setting all output values to 0 initially
+    yl = np.zeros(shape=(n, 2), dtype = np.float64) # setting all output values to 0 initially
         
     for i in range(yl.shape[0]):   
         for j in range(yl.shape[1]):
@@ -214,6 +217,7 @@ n_input = train_data.shape[1]
 # set the number of nodes in output unit
 n_class = 2
 
+n_hidden_array = [4,8,12,16,20]
 
 for x in n_hidden_array:
     for y in range(0,70,10):
@@ -244,18 +248,19 @@ for x in n_hidden_array:
         w1 = params[0:n_hidden * (n_input + 1)].reshape( (n_hidden, (n_input + 1)))
         w2 = params[(n_hidden * (n_input + 1)):].reshape((n_class, (n_hidden + 1)))
 
+        print("\n lambda:"+str(lambdaval))
+        print("\n No of Hidden layers:"+str(n_hidden))
         #Test the computed parameters
         predicted_label = nnPredict(w1,w2,train_data)
         #find the accuracy on Training Dataset
-        print('\n Training set Accuracy:' + str(100*np.mean((predicted_label == train_label.reshape(train_label.shape[0], 1))).astype(float))) + '%')
+        print('\n Training set Accuracy:' + str(100*np.mean((predicted_label == train_label.reshape(train_label.shape[0], 1)).astype(float))) + '%')
         predicted_label = nnPredict(w1,w2,validation_data)
         #find the accuracy on Validation Dataset
-        print('\n Validation set Accuracy:' + str(100*np.mean((predicted_label == validation_label.reshape(validation_label.shape[0], 1))).astype(float))) + '%')
+        print('\n Validation set Accuracy:' + str(100*np.mean((predicted_label == validation_label.reshape(validation_label.shape[0], 1)).astype(float))) + '%')
         predicted_label = nnPredict(w1,w2,test_data)
         #find the accuracy on Validation Dataset
-        print('\n Test set Accuracy:' +  str(100*np.mean((predicted_label == test_label.reshape(test_label.shape[0], 1))).astype(float))) + '%')
+        print('\n Test set Accuracy:' +  str(100*np.mean((predicted_label == test_label.reshape(test_label.shape[0], 1)).astype(float))) + '%')
         
         t2 = time.time()
         
-        print '\n Time taken:'+str(t2-t1)
-
+        print('\n Time taken:'+str(t2-t1))
