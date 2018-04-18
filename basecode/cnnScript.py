@@ -407,15 +407,15 @@ def print_test_accuracy(show_example_errors=False,
         print("Confusion Matrix:")
         plot_confusion_matrix(cls_pred=cls_pred)
 
-print_test_accuracy()
+print_test_accuracy(show_example_errors=False, show_confusion_matrix=True)
 optimize(num_iterations=1)
-print_test_accuracy()
+print_test_accuracy(show_example_errors=False, show_confusion_matrix=True)
 optimize(num_iterations=99) # We already performed 1 iteration above.
-print_test_accuracy(show_example_errors=False)
+print_test_accuracy(show_example_errors=False, show_confusion_matrix=True)
 optimize(num_iterations=900) # We performed 100 iterations above.
-print_test_accuracy(show_example_errors=False)
+print_test_accuracy(show_example_errors=False, show_confusion_matrix=True)
 optimize(num_iterations=9000)
-print_test_accuracy(show_example_errors=False)
+print_test_accuracy(show_example_errors=False, show_confusion_matrix=True)
 session.close()
 
 
