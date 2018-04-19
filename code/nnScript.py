@@ -4,6 +4,7 @@ from scipy.io import loadmat
 from math import sqrt
 from numpy import exp
 import time
+import pickle
 
 
 def initializeWeights(n_in, n_out):
@@ -133,14 +134,19 @@ def preprocess():
     # Your code here.
     total_data=np.array(np.vstack((train_data, validation_data, test_data)))
     duplicates = np.all(total_data == total_data[0,:], axis = 0)
+    sel_features = np.where(duplicates==False)
     total_data = total_data[:,~duplicates]
     
+    # Collecting selected feature indices
+    selected_features = np.array([])
+    selected_features = sel_features[0]
+        
     train_data = total_data[0:len(train_data),:]
     validation_data = total_data[len(train_data): (len(train_data) + len(validation_data)),:]
     test_data = total_data[(len(train_data) + len(validation_data)): (len(train_data) + len(validation_data) + len(test_data)),:]
     print('preprocess done')
 
-    return train_data, train_label, validation_data, validation_label, test_data, test_label
+    return selected_features, train_data, train_label, validation_data, validation_label, test_data, test_label
 
 
 def nnObjFunction(params, *args):
@@ -304,7 +310,7 @@ def nnPredict(w1, w2, data):
 
 """**************Neural Network Script Starts here********************************"""
 
-train_data, train_label, validation_data, validation_label, test_data, test_label = preprocess()
+selected_features, train_data, train_label, validation_data, validation_label, test_data, test_label = preprocess()
 
 #  Train Neural Network
 
@@ -314,65 +320,77 @@ n_input = train_data.shape[1]
 # set the number of nodes in output unit
 n_class = 10
 
-n_hidden_array = [4,8,12,16,20]
+#n_hidden_array = [4,8,12,16,20]
 
-for x in n_hidden_array:
-    for y in range(0,70,10):
+#for x in n_hidden_array:
+#    for y in range(0,70,10):
         
-        # set the number of nodes in hidden unit (not including bias unit)
-        n_hidden = x # values - 4,8,12,16,20
+# set the number of nodes in hidden unit (not including bias unit)
+#n_hidden = x # values - 4,8,12,16,20
+n_hidden = 20 # Optimal hidden units
 
-        # set the regularization hyper-parameter
-        lambdaval = y # values - 0 to 60, 10
+# set the regularization hyper-parameter
+#lambdaval = y # values - 0 to 60, 10
+lambdaval = 10 # Optimal lambda value
 
-        # Note current time
-        t1 = time.time()
-        
-        # initialize the weights into some random matrices
-        initial_w1 = initializeWeights(n_input, n_hidden)
-        initial_w2 = initializeWeights(n_hidden, n_class)
+# Note current time
+t1 = time.time()
 
-        # unroll 2 weight matrices into single column vector
-        initialWeights = np.concatenate((initial_w1.flatten(), initial_w2.flatten()), 0)
+# initialize the weights into some random matrices
+initial_w1 = initializeWeights(n_input, n_hidden)
+initial_w2 = initializeWeights(n_hidden, n_class)
 
-        args = (n_input, n_hidden, n_class, train_data, train_label, lambdaval)
+# unroll 2 weight matrices into single column vector
+initialWeights = np.concatenate((initial_w1.flatten(), initial_w2.flatten()), 0)
 
-        # Train Neural Network using fmin_cg or minimize from scipy,optimize module. Check documentation for a working example
+args = (n_input, n_hidden, n_class, train_data, train_label, lambdaval)
 
-        opts = {'maxiter': 50}  # Preferred value.
+# Train Neural Network using fmin_cg or minimize from scipy,optimize module. Check documentation for a working example
 
-        nn_params = minimize(nnObjFunction, initialWeights, jac=True, args=args, method='CG', options=opts)
+opts = {'maxiter': 50}  # Preferred value.
 
-        # In Case you want to use fmin_cg, you may have to split the nnObjectFunction to two functions nnObjFunctionVal
-        # and nnObjGradient. Check documentation for this function before you proceed.
-        # nn_params, cost = fmin_cg(nnObjFunctionVal, initialWeights, nnObjGradient,args = args, maxiter = 50)
+nn_params = minimize(nnObjFunction, initialWeights, jac=True, args=args, method='CG', options=opts)
+
+# In Case you want to use fmin_cg, you may have to split the nnObjectFunction to two functions nnObjFunctionVal
+# and nnObjGradient. Check documentation for this function before you proceed.
+# nn_params, cost = fmin_cg(nnObjFunctionVal, initialWeights, nnObjGradient,args = args, maxiter = 50)
 
 
-        # Reshape nnParams from 1D vector into w1 and w2 matrices
-        w1 = nn_params.x[0:n_hidden * (n_input + 1)].reshape((n_hidden, (n_input + 1)))
-        w2 = nn_params.x[(n_hidden * (n_input + 1)):].reshape((n_class, (n_hidden + 1)))
+# Reshape nnParams from 1D vector into w1 and w2 matrices
+w1 = nn_params.x[0:n_hidden * (n_input + 1)].reshape((n_hidden, (n_input + 1)))
+w2 = nn_params.x[(n_hidden * (n_input + 1)):].reshape((n_class, (n_hidden + 1)))
 
-        # Test the computed parameters
+# Test the computed parameters
 
-        predicted_label = nnPredict(w1, w2, train_data)
-        
-        # find the accuracy on Training Dataset
+predicted_label = nnPredict(w1, w2, train_data)
 
-        print('\n lambda:'+str(y)+'\n hidden layers:'+str(x))
-        print('\n Training set Accuracy:' + str(100 * np.mean((predicted_label == train_label.reshape(train_label.shape[0], 1)).astype(float))) + '%')
+print("\n Weight vector w1:"+str(w1))
+print("\n Weight vector w2:"+str(w2))
 
-        predicted_label = nnPredict(w1, w2, validation_data)
+# find the accuracy on Training Dataset
 
-        # find the accuracy on Validation Dataset
+print('\n lambda:'+str(lambdaval)+'\n hidden layers:'+str(n_hidden))
+print('\n Training set Accuracy:' + str(100 * np.mean((predicted_label == train_label.reshape(train_label.shape[0], 1)).astype(float))) + '%')
 
-        print('\n Validation set Accuracy:' + str(100 * np.mean((predicted_label == validation_label.reshape(validation_label.shape[0], 1)).astype(float))) + '%')
+predicted_label = nnPredict(w1, w2, validation_data)
 
-        predicted_label = nnPredict(w1, w2, test_data)
+# find the accuracy on Validation Dataset
 
-        # find the accuracy on Validation Dataset
+print('\n Validation set Accuracy:' + str(100 * np.mean((predicted_label == validation_label.reshape(validation_label.shape[0], 1)).astype(float))) + '%')
 
-        print('\n Test set Accuracy:' + str(100 * np.mean((predicted_label == test_label.reshape(test_label.shape[0], 1)).astype(float))) + '%')
-        
-        t2 = time.time()
-        
-        print('\n Time taken:'+str(t2-t1))
+predicted_label = nnPredict(w1, w2, test_data)
+
+# find the accuracy on Validation Dataset
+
+print('\n Test set Accuracy:' + str(100 * np.mean((predicted_label == test_label.reshape(test_label.shape[0], 1)).astype(float))) + '%')
+
+t2 = time.time()
+
+print('\n Time taken:'+str(t2-t1))
+
+# create params.picke file to store the following variables
+
+store_obj = dict([("selected_features", selected_features),("w1",w1), ("w2",w2), ("n_hidden",n_hidden), ("lambdaval", lambdaval)])
+pickle.dump(store_obj, open('params.pickle','wb'), protocol=3)
+
+
